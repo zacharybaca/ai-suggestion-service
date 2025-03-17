@@ -17,7 +17,7 @@ app = Flask(__name__)
 load_dotenv()
 
 # Get PORT from .env or default to 5000
-port = os.getenv("PORT", 5000) 
+port = os.getenv("PORT", 5000)
 
 @app.route('/predict-assignee', methods=['POST'])
 def predict():

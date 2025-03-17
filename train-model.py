@@ -9,6 +9,13 @@ from scipy.sparse import hstack
 # Load dataset
 df = pd.read_csv("data.csv")
 
+# Ensure 'category' column exists, if not create it with default value "Unknown"
+if "category" not in df.columns:
+    df["category"] = "Unknown"  # Create the column with a default value
+
+# Fill missing categories with "Unknown"
+df["category"] = df["category"].fillna("Unknown")
+
 # Convert `taskCompleted` to binary (0 = Incomplete, 1 = Complete)
 df["taskCompleted"] = df["taskCompleted"].astype(int)
 
@@ -21,7 +28,6 @@ X_details = vectorizer.fit_transform(df["taskDetails"])
 df["taskTodos"] = df["taskTodos"].apply(lambda x: len(str(x).split(',')))
 
 # Encode `category` column and add "Unknown" category
-df["category"].fillna("Unknown", inplace=True)  # Fill missing categories
 categories = df["category"].unique().tolist() + ["Unknown"]  # Ensure "Unknown" is part of the classes
 
 category_encoder = LabelEncoder()
@@ -34,28 +40,9 @@ y = developer_encoder.fit_transform(df["assignedEmployee"])
 
 # Combine all features
 X = hstack((
-    X_title, 
-    X_details, 
-    df["taskCompleted"].values.reshape(-1, 1), 
+    X_title,
+    X_details,
+    df["taskCompleted"].values.reshape(-1, 1),
     df["taskTodos"].values.reshape(-1, 1),
     df["category_encoded"].values.reshape(-1, 1)  # Include category encoding
 ))
-
-# Split into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Train the model
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
-
-# Evaluate accuracy
-accuracy = model.score(X_test, y_test)
-print(f"Model Accuracy: {accuracy:.2f}")
-
-# Save trained model and encoders
-joblib.dump(model, "bug_assignment_model.pkl")
-joblib.dump(vectorizer, "vectorizer.pkl")
-joblib.dump(category_encoder, "category_encoder.pkl")  # Save category encoder
-joblib.dump(developer_encoder, "developer_encoder.pkl")
-
-print("Model retrained and saved successfully!")
