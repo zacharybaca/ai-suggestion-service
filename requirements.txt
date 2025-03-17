@@ -29,6 +29,7 @@ et-xmlfile==1.0.1
 Flask==3.0.2
 fonttools==4.46.0
 fs==2.4.16
+gunicorn==23.0.0
 html5lib==1.1
 httplib2==0.20.4
 hyperlink==21.0.0
