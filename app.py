@@ -29,6 +29,9 @@ def predict():
     bug_description = data.get("description", "")
     category = data.get("category", "")
 
+    if category not in category_encoder.classes_:
+        category = "Unknown"  # Map unknown categories to "Unknown"
+
     # Convert input to numerical format
     X_text = vectorizer.transform([bug_description])
     category_encoded = category_encoder.transform([category]).reshape(-1, 1)
