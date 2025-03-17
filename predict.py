@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+import os
+from dotenv import load_dotenv # type: ignore
 import joblib
 import pandas as pd
 import scipy.sparse
@@ -10,6 +12,12 @@ category_encoder = joblib.load("category_encoder.pkl")
 developer_encoder = joblib.load("developer_encoder.pkl")
 
 app = Flask(__name__)
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get PORT from .env or default to 5000
+port = int(os.getenv("PORT", 5000))
 
 @app.route('/predict-assignee', methods=['POST'])
 def predict():
@@ -29,4 +37,4 @@ def predict():
     return jsonify({"assigned_developer": assigned_developer})
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(port=port, debug=True)
