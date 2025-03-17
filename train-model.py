@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import joblib
@@ -20,12 +20,26 @@ X_details = vectorizer.fit_transform(df["taskDetails"])
 # Encode `taskTodos` as the count of todo items
 df["taskTodos"] = df["taskTodos"].apply(lambda x: len(str(x).split(',')))
 
+# Encode `category` column and add "Unknown" category
+df["category"].fillna("Unknown", inplace=True)  # Fill missing categories
+categories = df["category"].unique().tolist() + ["Unknown"]  # Ensure "Unknown" is part of the classes
+
+category_encoder = LabelEncoder()
+category_encoder.fit(categories)  # Fit encoder with all known categories
+df["category_encoded"] = category_encoder.transform(df["category"])
+
 # Encode assigned employee (target variable)
 developer_encoder = LabelEncoder()
 y = developer_encoder.fit_transform(df["assignedEmployee"])
 
 # Combine all features
-X = hstack((X_title, X_details, df["taskCompleted"].values.reshape(-1, 1), df["taskTodos"].values.reshape(-1, 1)))
+X = hstack((
+    X_title, 
+    X_details, 
+    df["taskCompleted"].values.reshape(-1, 1), 
+    df["taskTodos"].values.reshape(-1, 1),
+    df["category_encoded"].values.reshape(-1, 1)  # Include category encoding
+))
 
 # Split into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -41,6 +55,7 @@ print(f"Model Accuracy: {accuracy:.2f}")
 # Save trained model and encoders
 joblib.dump(model, "bug_assignment_model.pkl")
 joblib.dump(vectorizer, "vectorizer.pkl")
+joblib.dump(category_encoder, "category_encoder.pkl")  # Save category encoder
 joblib.dump(developer_encoder, "developer_encoder.pkl")
 
 print("Model retrained and saved successfully!")
