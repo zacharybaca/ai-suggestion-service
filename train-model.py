@@ -9,12 +9,16 @@ from scipy.sparse import hstack
 # Load dataset
 df = pd.read_csv("data.csv")
 
-# Ensure 'category' column exists, if not create it with default value "Unknown"
-if "category" not in df.columns:
-    df["category"] = "Unknown"  # Create the column with a default value
+# Standardize column names to lowercase
+df.rename(columns={"Category": "category"}, inplace=True)
 
-# Fill missing categories with "Unknown"
-df["category"] = df["category"].fillna("Unknown")
+# Debugging: Check columns again
+print("Columns in DataFrame after renaming:", df.columns)
+
+# Ensure 'category' column exists
+if "category" not in df.columns:
+    print("Warning: 'category' column is missing! Creating it with default 'Unknown'.")
+    df["category"] = "Unknown"
 
 # Convert `taskCompleted` to binary (0 = Incomplete, 1 = Complete)
 df["taskCompleted"] = df["taskCompleted"].astype(int)
@@ -27,11 +31,15 @@ X_details = vectorizer.fit_transform(df["taskDetails"])
 # Encode `taskTodos` as the count of todo items
 df["taskTodos"] = df["taskTodos"].apply(lambda x: len(str(x).split(',')))
 
-# Encode `category` column and add "Unknown" category
-categories = df["category"].unique().tolist() + ["Unknown"]  # Ensure "Unknown" is part of the classes
+# Ensure "Unknown" is part of the known categories
+df["category"] = df["category"].fillna("Unknown")  # Fix the FutureWarning
+categories = df["category"].unique().tolist()
+if "Unknown" not in categories:
+    categories.append("Unknown")
 
+# Encode `category` column
 category_encoder = LabelEncoder()
-category_encoder.fit(categories)  # Fit encoder with all known categories
+category_encoder.fit(categories)
 df["category_encoded"] = category_encoder.transform(df["category"])
 
 # Encode assigned employee (target variable)
@@ -44,5 +52,24 @@ X = hstack((
     X_details,
     df["taskCompleted"].values.reshape(-1, 1),
     df["taskTodos"].values.reshape(-1, 1),
-    df["category_encoded"].values.reshape(-1, 1)  # Include category encoding
+    df["category_encoded"].values.reshape(-1, 1)
 ))
+
+# Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Evaluate accuracy
+accuracy = model.score(X_test, y_test)
+print(f"Model Accuracy: {accuracy:.2f}")
+
+# Save trained model and encoders
+joblib.dump(model, "bug_assignment_model.pkl")
+joblib.dump(vectorizer, "vectorizer.pkl")
+joblib.dump(category_encoder, "category_encoder.pkl")
+joblib.dump(developer_encoder, "developer_encoder.pkl")
+
+print("Model retrained and saved successfully!")

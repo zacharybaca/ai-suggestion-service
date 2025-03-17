@@ -30,7 +30,8 @@ def predict():
     category = data.get("category", "")
 
     if category not in category_encoder.classes_:
-        category = "Unknown"  # Map unknown categories to "Unknown"
+        category = "Unknown"  # Default to "Unknown" if it's an unseen category
+        category_encoded = category_encoder.transform([category]).reshape(-1, 1)
 
     # Convert input to numerical format
     X_text = vectorizer.transform([bug_description])
